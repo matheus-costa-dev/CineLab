@@ -65,7 +65,7 @@ class Starwars():
         all_data = self.get_all()
 
         folder = "datasets"
-        sub_folder = f"starwars_{sw.movie["episode_id"]}"
+        sub_folder = f"starwars_{self.movie["episode_id"]}"
         
         if not folder in listdir():
             makedirs(folder)
