@@ -1,0 +1,86 @@
+{
+    "characters": [
+      {
+        "name": "LUKE",
+        "relations": [
+          { "type": "mentor", "with": ["BEN"] },
+          { "type": "friend", "with": ["HAN", "LEIA", "BIGGS", "C-3PO", "R2-D2"] },
+          { "type": "family", "with": ["OWEN", "AUNT BERU"] },
+          { "type": "enemy", "with": ["VADER", "IMPERIAL FORCES"] }
+        ]
+      },
+      {
+        "name": "LEIA",
+        "relations": [
+          { "type": "ally", "with": ["LUKE", "HAN", "BEN", "REBEL OFFICERS"] },
+          { "type": "enemy", "with": ["VADER", "TARKIN", "IMPERIAL OFFICERS"] }
+        ]
+      },
+      {
+        "name": "HAN",
+        "relations": [
+          { "type": "friend", "with": ["LUKE", "LEIA", "CHEWBACCA"] },
+          { "type": "enemy", "with": ["JABBA", "GREEDO"] }
+        ]
+      },
+      {
+        "name": "BEN (Obi-Wan Kenobi)",
+        "relations": [
+          { "type": "mentor", "with": ["LUKE"] },
+          { "type": "former_master", "with": ["VADER"] },
+          { "type": "ally", "with": ["LEIA", "REBEL ALLIANCE"] }
+        ]
+      },
+      {
+        "name": "VADER",
+        "relations": [
+          { "type": "enemy", "with": ["LUKE", "LEIA", "BEN", "REBELS"] },
+          { "type": "subordinate", "with": ["TARKIN"] },
+          { "type": "former_apprentice", "with": ["BEN"] }
+        ]
+      },
+      {
+        "name": "TARKIN",
+        "relations": [
+          { "type": "commander", "with": ["VADER", "IMPERIAL OFFICERS"] },
+          { "type": "enemy", "with": ["LEIA", "REBELS"] }
+        ]
+      },
+      {
+        "name": "OWEN & AUNT BERU",
+        "relations": [
+          { "type": "guardians", "with": ["LUKE"] }
+        ]
+      },
+      {
+        "name": "IMPERIAL OFFICERS (MOTTI, TAGGE, etc.)",
+        "relations": [
+          { "type": "subordinate", "with": ["TARKIN", "VADER"] }
+        ]
+      },
+      {
+        "name": "JABBA",
+        "relations": [
+          { "type": "enemy", "with": ["HAN"] }
+        ]
+      },
+      {
+        "name": "GREEDO",
+        "relations": [
+          { "type": "bounty_hunter", "with": ["HAN"] }
+        ]
+      },
+      {
+        "name": "REBEL PILOTS (BIGGS, WEDGE, RED LEADER, etc.)",
+        "relations": [
+          { "type": "ally", "with": ["LUKE", "LEIA"] }
+        ]
+      },
+      {
+        "name": "C-3PO & R2-D2",
+        "relations": [
+          { "type": "ally", "with": ["LUKE", "LEIA", "BEN"] }
+        ]
+      }
+    ]
+  }

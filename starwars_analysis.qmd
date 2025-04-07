@@ -1,0 +1,290 @@
+---
+title: "Análise do filme StarWars: Episódio IV"
+author: Matheus Pereira Costa
+date: 2025-04-05
+lang: "pt-br"
+format: 
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+jupyter: python3
+kernel:
+    name: python3
+    path: C:/Users/mathe/Projects/hibrido/CineLab/back/venv/Scripts/python.exe
+---
+
+```{python}
+#| label: variavel-geral
+#| include: false
+
+filme = "Star Wars: Episode IV - A New Hope"
+```
+
+## Introdução
+Este relatório tem como objetivo analisar as falas dos personagens do filme *Star Wars: Episode IV - A New Hope* por meio de técnicas de Processamento de Linguagem Natural (NLP).
+A análise considera o roteiro original em inglês, portanto os nomes dos personagens e suas falas estarão neste idioma. Serão explorados padrões de frequência de palavras, sentimentos expressos, além de visualizações como nuvem de palavras e gráficos comparativos.
+
+
+```{python}
+#| label: setuo
+#| include: false
+ 
+import re
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from textblob import TextBlob
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import nltk
+import string
+from wordcloud import WordCloud
+
+nltk.download('punkt')
+nltk.download('stopwords')
+
+```
+
+```{python}
+#| label: custom-functions
+#| include: false
+
+def sentiment_analysis(texto):
+    analyse = TextBlob(texto)
+    if analyse.sentiment.polarity > 0:
+        return "positive"
+    elif analyse.sentiment.polarity < 0:
+        return "negative"
+    else:
+        return "neutral"
+
+
+def clean_word(word):
+    word = word.lower().strip(string.punctuation + "’“”‘")
+    # Remove qualquer pontuação restante (incluindo no meio da palavra)
+    word = ''.join([char for char in word if char not in string.punctuation])
+    return word
+```
+
+
+```{python}
+#| label: Importação-dados
+#| code-fold: true
+
+df = pd.read_csv("datasets/SW_EpisodeIV.csv")
+personagens = [personagem.capitalize() for personagem in df["character"].unique()]
+n_personagens = len(personagens)
+```
+
+O filme dos starwars episodio IV apresentou `{python} n_personagens` personagens ao longo da obra sendo eles `{python} ", ".join(personagens)`
+
+Antes de fazer analises mais profundas, gostaria de fazer um apanhado geral de quais são as palavras mais faladas
+
+## Palavras mais faladas
+
+Ao fazer uma analise prévia de quais são as palavras mais ditas ao longo da obra é possível criar uma núvem de palavras e o gráfico de barras demonstrando quais são, a nuvem são as top 100 já os gráficos de barras são as top 10. Irei começar a demonstrar pelo gráfico de nuvem de palavras
+
+```{python}
+#| label: palavras-mais-faladas
+#| code-fold: true
+
+stop_words = set(stopwords.words("english"))
+stop_words.update(["you","it", "nt"])
+
+
+# Processamento robusto com tratamento de erros
+words = []
+for sentence in df["speech"]:
+    try:
+        tokens = word_tokenize(str(sentence))  # Garante que seja string
+        for word in tokens:
+            cleaned = clean_word(word)
+            if cleaned and cleaned not in stop_words:
+                words.append(cleaned)
+    except Exception as e:
+        print(f"Erro ao processar: {sentence}\nErro: {e}")
+
+
+text = " ".join(words)
+
+# Criar a nuvem de palavras
+wordcloud = WordCloud(background_color="white", max_font_size=32, min_font_size=8, max_words=100).generate(text)
+
+# Plotar a nuvem de palavras
+plt.figure(figsize=(10, 6))
+plt.imshow(wordcloud, interpolation='bilinear')
+plt.axis('off')  # Remove eixos
+plt.title("Palavras Mais Frequentes", fontsize=16)
+plt.show()
+
+```
+
+
+já o gráfico de barras, apresenta o seguinte formato
+
+```{python}
+#| label: graph-bar-words
+#| code-fold: true
+
+df_plot_tmp = pd.Series(words).value_counts().head(10).sort_values(ascending=True).reset_index()
+plt.figure(figsize=(12,8))
+sns.barplot(data=df_plot_tmp, x="count", y="index", hue="index", palette="Set2")
+plt.title("Palavras mais faaladas")
+plt.xlabel("Quantidade")
+plt.ylabel("Palavra")
+plt.box(False)
+plt.show()
+```
+
+feito essas considerações globais, agora aprofundaremos sobre a participação dos personagens
+
+
+## Participação dos personagens
+
+```{python}
+#| label: top-10-most-participative
+#| code-fold: true
+
+df_plot = df.groupby("character").count().sort_values("speech", ascending=False)
+top_10 = df_plot.head(10)
+
+total_participation = df_plot["speech"].sum().item()
+top_10_participation = top_10.sum().item()
+other_participation = total_participation - top_10_participation
+
+top_10_percentage_participation = round(top_10_participation/total_participation,2)
+others_percentage_participation = round(1 -top_10_percentage_participation, 2) 
+```
+
+Ao realizar a contagem de aparição de cada personagem durante o filme obtemos a seguinte tabela
+
+`{python} display(df_plot.reset_index())` 
+
+Seguindo para apenas os 10 mais participativos, é observável que eles representam `{python} top_10_percentage_participation * 100`% do total enquanto os demais representam `{python} others_percentage_participation * 100`%.
+
+Devido a esse fato, usarei para análises futuras apenas os 10 mais participativos.
+
+```{python}
+#| label: graph-most-participative
+#| code-fold: true
+
+plt.figure(figsize=(12,8))
+sns.barplot(data=top_10, x="character", y="speech", hue="character", dodge=False, palette="Set2")
+plt.title("Top 10 personagens mais participativos em Star Wars Episode IV")
+plt.xlabel("")
+plt.xticks(rotation=45, ha="right")
+plt.box(False)
+plt.ylabel("Número de participações")
+plt.tight_layout()
+plt.show()
+```
+
+## Análise de sentimentos dos personagens
+
+Primeiro, é necessário realizar os calculos para verificar os sentimentos das frases proferidas por cada personagem em cada ocasião, para isso será usado o textblob.sentiment que trará duas informações a polaridade e a subjetividade.
+
+A polaridade é uma medida que indica o sentimento de um texto, variando de -1 (extremamente negativo) a 1 (extremamente positivo), sendo 0 neutro.
+Já a subjetividade é outra medida que mede o grau de opinião pessoal, emoção ou julgamento presente em um texto, variando de 0 (objetivo/factual) ,não há opinião é mera apresentação de um fato exemplo: Paris é a capital da França, a 1 (subjetivo/opinativo) ou seja é opinião dele, por exemplo rio de janeiro é o lugar mais bonito do mundo.
+
+```{python}
+#| label: dados-sentimentos
+#| code-fold: true
+df_top_10 = df[df["character"].isin(top_10.reset_index()["character"])].copy()
+df_top_10["polarity"] = df_top_10["speech"].apply(lambda text: 
+TextBlob(text).sentiment.polarity)
+df_top_10["subjectivity"] = df_top_10["speech"].apply(lambda text: TextBlob(text).sentiment.subjectivity)
+df_top_10_plot_polarity = df_top_10.groupby("character").agg(polarity_mean = ("polarity", "mean"), polarity_sd = ("polarity", "std"), subjectivity_mean = ("subjectivity", "mean"), subjectivity_sd = ("subjectivity", "std")).reset_index()
+df_top_10_plot_polarity["polarity_sd"] = df_top_10_plot_polarity["polarity_sd"].fillna(0)
+df_top_10_plot_polarity["subjectivity_sd"] = df_top_10_plot_polarity["subjectivity_sd"].fillna(0.5)
+display(df_top_10)
+
+```
+
+Foi retirado uma média e o desvio padrão de cada metrica agrupado por personagem feito uma média. Sendo o desvio padrão uma medida que indica a variabilidade de uma metrica, ele vai de 0, ou seja é algo consistente, até infinito, ou seja varia muito. Ou seja quanto mais positivo o valor mais indica que varia bastante
+
+```{python}
+#| label: tbl-sentiment
+#| code-fold: true
+
+display(df_top_10_plot_polarity)
+
+```
+
+### polaridade
+
+```{python}
+#| label: graph-polaridade
+#| code-fold: true
+
+plt.figure(figsize=(12,8))
+ax = sns.scatterplot(data=df_top_10_plot_polarity, x="polarity_sd", y="polarity_mean", hue="character", palette="Set2", s=100)
+
+for _, row in df_top_10_plot_polarity.iterrows():
+    ax.text(x = row["polarity_sd"], y = row["polarity_mean"] + .003, s = row["character"], fontsize=10, ha="center")
+
+ax.text(x = 0.15, y = 0.0025,  s = "Polaridade Neutra", fontsize=10, ha="center", color="green")
+plt.axhline(0, color="green", lw=1, ls="--", label="Polaridade Neutra")
+plt.title("Analise da polaridade(Top 10)")
+plt.xlabel("Desvio padrão da polaridade")
+plt.ylabel("Polaridade média")
+plt.legend().set_visible(False)
+plt.tight_layout()
+plt.show()
+
+```
+
+
+### subjetividade
+
+```{python}
+#| label: graph-subjetividade
+#| code-fold: true
+
+# Criar o gráfico de dispersão
+plt.figure(figsize=(12, 8))
+ax = sns.scatterplot(
+    data=df_top_10_plot_polarity,
+    x="subjectivity_sd",
+    y="subjectivity_mean",
+    hue="character",
+    palette="Set2",
+    s=100  # Tamanho dos pontos
+)
+
+for _, row in df_top_10_plot_polarity.iterrows():
+    ax.text(row["subjectivity_sd"], row["subjectivity_mean"] + .003, row["character"], fontsize=10, ha="center")
+
+# Melhorar a visualização
+plt.title("Subjetividade Personagem (Top 10)")
+plt.xlabel("Desvio padrão da Subjetividade")
+plt.ylabel("Subjetividade Média")
+plt.legend(title="Personagem", bbox_to_anchor=(1.05, 1))  # Mover a legenda para fora
+plt.legend().set_visible(False)  # Mover a legenda para fora
+
+plt.tight_layout()  # Ajustar layout para evitar cortes
+plt.show()
+
+```
+
+## Análise de Sentimentos por Personagem
+
+```{python}
+#| label: graph-sentiment-analysis-by-character
+#| code-fold: true
+#| output: asis
+
+# Aplicar análise de sentimento
+df_top_10["sentiment"] = df_top_10["speech"].apply(sentiment_analysis)
+
+df_sentiment = df_top_10.groupby(["character","sentiment"]).size().unstack()
+
+df_sentiment.sort_values(by="positive", ascending=False).plot(kind="bar", stacked=True, colormap="viridis")
+plt.title("Distribuição de Sentimentos por Personagem")
+plt.xlabel("Personagem")
+plt.ylabel("Número de falas")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+```
