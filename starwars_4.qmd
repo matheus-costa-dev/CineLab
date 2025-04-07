@@ -42,7 +42,7 @@ import nltk
 import string
 from wordcloud import WordCloud
 from IPython.display import display
-
+from os.path import join
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -75,7 +75,7 @@ def clean_word(word):
 #| label: Importação-dados
 #| code-fold: true
 
-df = pd.read_csv("datasets/SW_EpisodeIV.csv")
+df = pd.read_csv(join("datasets","starwars_4","script.csv"))
 personagens = [personagem.capitalize() for personagem in df["character"].unique()]
 n_personagens = len(personagens)
 ```
