@@ -74,12 +74,12 @@ class Starwars():
             makedirs(join(folder, sub_folder))
 
         for name, df in all_data.items():
-            df.to_csv(join(folder, sub_folder,f"{name}.csv"))
+            df.to_csv(join(folder, sub_folder,f"{name}.csv"), index=False)
 
 
 
-# if __name__ == "__main__":
-    # sw = Starwars(n_movie=1)
-    # sw.export_all_to_csv()
+if __name__ == "__main__":
+    sw = Starwars(n_movie=1)
+    sw.export_all_to_csv()
 
 
