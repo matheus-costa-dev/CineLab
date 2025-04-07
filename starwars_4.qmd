@@ -288,7 +288,7 @@ df_top_10["sentiment"] = df_top_10["speech"].apply(sentiment_analysis)
 
 df_sentiment = df_top_10.groupby(["character","sentiment"]).size().unstack()
 
-df_sentiment.sort_values(by="positive", ascending=False).plot(kind="bar", stacked=True, colormap="viridis")
+df_sentiment.sort_values(by="positive", ascending=False).plot(kind="bar", stacked=True, colormap="viridis", legend="reverse")
 plt.title("Distribuição de Sentimentos por Personagem")
 plt.xlabel("Personagem")
 plt.ylabel("Número de falas")
