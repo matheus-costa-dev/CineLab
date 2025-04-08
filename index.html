@@ -92,6 +92,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#subjetividade" id="toc-subjetividade" class="nav-link" data-scroll-target="#subjetividade">subjetividade</a></li>
   </ul></li>
   <li><a href="#análise-de-sentimentos-por-personagem" id="toc-análise-de-sentimentos-por-personagem" class="nav-link" data-scroll-target="#análise-de-sentimentos-por-personagem">Análise de Sentimentos por Personagem</a></li>
+  <li><a href="#análise-por-tópicos" id="toc-análise-por-tópicos" class="nav-link" data-scroll-target="#análise-por-tópicos">Análise por tópicos</a>
+  <ul class="collapse">
+  <li><a href="#gênero" id="toc-gênero" class="nav-link" data-scroll-target="#gênero">Gênero</a></li>
+  <li><a href="#participação-de-gênero" id="toc-participação-de-gênero" class="nav-link" data-scroll-target="#participação-de-gênero">Participação de gênero</a></li>
+  <li><a href="#espécie" id="toc-espécie" class="nav-link" data-scroll-target="#espécie">Espécie</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -134,7 +140,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="importação-dados" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Código</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(join(<span class="st">"datasets"</span>,<span class="st">"starwars_4"</span>,<span class="st">"script.csv"</span>))</span>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> read_csv(<span class="st">"script.csv"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>personagens <span class="op">=</span> [personagem.capitalize() <span class="cf">for</span> personagem <span class="kw">in</span> df[<span class="st">"character"</span>].unique()]</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>n_personagens <span class="op">=</span> <span class="bu">len</span>(personagens)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
@@ -883,6 +889,367 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <p><img src="starwars_4_files/figure-html/graph-sentiment-analysis-by-character-output-1.png" id="graph-sentiment-analysis-by-character" class="img-fluid"></p>
+</section>
+<section id="análise-por-tópicos" class="level1">
+<h1>Análise por tópicos</h1>
+<div id="data-merged" class="cell" data-execution_count="15">
+<details class="code-fold">
+<summary>Código</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>df_name_versions <span class="op">=</span> read_csv(<span class="st">"name_versions.csv"</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>df_merged <span class="op">=</span> pd.merge(df,df_name_versions,<span class="st">"left"</span>,<span class="st">"character"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>df_characters <span class="op">=</span> read_csv(<span class="st">"characters.csv"</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>df_merged <span class="op">=</span> pd.merge(df_merged, df_characters, <span class="st">"left"</span>, left_on<span class="op">=</span><span class="st">"full_name"</span>,right_on<span class="op">=</span><span class="st">"name"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>df_merged_clean <span class="op">=</span> df_merged[<span class="op">~</span>df_merged[<span class="st">"name"</span>].isna()]</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>df_merged_dirty <span class="op">=</span> df_merged[df_merged[<span class="st">"name"</span>].isna()]</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>personagens_deleted <span class="op">=</span> df_merged_dirty[<span class="st">"character"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> char: char.capitalize()).unique()</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>personagens_kept <span class="op">=</span> df_merged_clean[<span class="st">"name"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> char: char.capitalize()).unique()</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Para fazer essa análise, será removido os persoagens que não tem detalhes sobre as suas participações ou são genéricas, portanto ao fazer a limpeza inicial foi removido 46 representando uma diminuição de 76.7% do total presente. Sendo eles Imperial officer, Rebel officer, Trooper, Chief pilot, Woman, Fixer, Camie, Deak, Commander, Second officer, First trooper, Second trooper, Beru, Aunt beru, Tagge, Motti, Bartender, Creature, Human, Officer cass, Voice over death star intercom, Officer, Voice, Gantry officer, Intercom voice, Trooper voice, First officer, Willard, Death star intercom voice, Dodonna, Gold leader, Man, Red leader, Chief, Massassi intercom voice, Red ten, Red seven, Red nine, Red eleven, Astro-officer, Control officer, Gold five, Gold two, Wingman, Base voice, Technician.</p>
+<p>O total de personagens mantidos foram 14 ou seja uma população de 23.3% sendo eles C-3po, Luke skywalker, Darth vader, Raymus antilles, Biggs darklighter, Leia organa, Owen lars, Obi-wan kenobi, Wilhuff tarkin, Han solo, Greedo, Jabba desilijic tiure, Wedge antilles, Jek tono porkins.</p>
+<section id="gênero" class="level2">
+<h2 class="anchored" data-anchor-id="gênero">Gênero</h2>
+<p>Ao verificar os generos dos personagens, encontramos a seguinte distribuição:</p>
+<div id="tbl-gender-n" class="cell anchored" data-execution_count="16">
+<details class="code-fold">
+<summary>Código</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_gender_n <span class="op">=</span> df_merged_clean.groupby(<span class="st">"gender"</span>).agg(n<span class="op">=</span>(<span class="st">"name"</span>,<span class="st">"nunique"</span>)).reset_index()</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>display(df_gender_n)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">gender</th>
+<th data-quarto-table-cell-role="th">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>female</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>hermaphrodite</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>male</td>
+<td>11</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>podendo ser vista da seguinte forma:</p>
+<div id="cell-graph-pie-gender" class="cell" data-execution_count="17">
+<details class="code-fold">
+<summary>Código</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>df_gender_n.reset_index().set_index(<span class="st">"gender"</span>)[<span class="st">"n"</span>].plot.pie(ylabel<span class="op">=</span><span class="st">""</span>,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>                           autopct<span class="op">=</span><span class="st">'</span><span class="sc">%1.1f%%</span><span class="st">'</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    startangle<span class="op">=</span><span class="dv">90</span>,      </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    shadow<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>     colors<span class="op">=</span>sns.color_palette(<span class="st">"Set2"</span>) ,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>     figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">8</span>),</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>          title<span class="op">=</span><span class="st">"Quantidade de personagens por genero"</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="starwars_4_files/figure-html/graph-pie-gender-output-1.png" id="graph-pie-gender" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="tbl-genders" class="cell anchored" data-execution_count="18">
+<details class="code-fold">
+<summary>Código</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> gender <span class="kw">in</span> df_merged_clean[<span class="st">"gender"</span>].dropna().unique():</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    tmp <span class="op">=</span> df_merged_clean[df_merged_clean[<span class="st">"gender"</span>]<span class="op">==</span>gender].drop_duplicates(<span class="st">"name"</span>).reset_index().loc[:, [<span class="st">"name"</span>,<span class="st">"gender"</span>]]</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    display(Markdown(<span class="ss">f"### </span><span class="sc">{</span>gender<span class="sc">}</span><span class="ss">"</span>))</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    display(tmp)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<section id="male" class="level3 cell-output cell-output-display cell-output-markdown">
+<h3 class="anchored" data-anchor-id="male">male</h3>
+</section>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">name</th>
+<th data-quarto-table-cell-role="th">gender</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>Luke Skywalker</td>
+<td>male</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>Darth Vader</td>
+<td>male</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>Raymus Antilles</td>
+<td>male</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>Biggs Darklighter</td>
+<td>male</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>Owen Lars</td>
+<td>male</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>Obi-Wan Kenobi</td>
+<td>male</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">6</td>
+<td>Wilhuff Tarkin</td>
+<td>male</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">7</td>
+<td>Han Solo</td>
+<td>male</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">8</td>
+<td>Greedo</td>
+<td>male</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">9</td>
+<td>Wedge Antilles</td>
+<td>male</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">10</td>
+<td>Jek Tono Porkins</td>
+<td>male</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<section id="female" class="level3 cell-output cell-output-display cell-output-markdown">
+<h3 class="anchored" data-anchor-id="female">female</h3>
+</section>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">name</th>
+<th data-quarto-table-cell-role="th">gender</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>Leia Organa</td>
+<td>female</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<section id="hermaphrodite" class="level3 cell-output cell-output-display cell-output-markdown">
+<h3 class="anchored" data-anchor-id="hermaphrodite">hermaphrodite</h3>
+</section>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">name</th>
+<th data-quarto-table-cell-role="th">gender</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>Jabba Desilijic Tiure</td>
+<td>hermaphrodite</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Feito essa analise inicial, podemos verificar a participação de cada gênero no filme</p>
+</section>
+<section id="participação-de-gênero" class="level2">
+<h2 class="anchored" data-anchor-id="participação-de-gênero">Participação de gênero</h2>
+<div id="cell-gender-analysis" class="cell" data-execution_count="19">
+<details class="code-fold">
+<summary>Código</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>df_gender_participations <span class="op">=</span> df_merged_clean.groupby(<span class="st">"gender"</span>).agg(n<span class="op">=</span>(<span class="st">"gender"</span>,<span class="st">"count"</span>)).assign(percentage <span class="op">=</span> <span class="kw">lambda</span> col: <span class="bu">round</span>(col[<span class="st">"n"</span>]<span class="op">/</span>col[<span class="st">"n"</span>].<span class="bu">sum</span>(), <span class="dv">3</span>))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>total_participation <span class="op">=</span> df_gender_participations[<span class="st">"n"</span>].<span class="bu">sum</span>()</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>gender_participation_dict <span class="op">=</span> df_gender_participations.to_dict()</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>display(df_gender_participations.reset_index())</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="gender-analysis" class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">gender</th>
+<th data-quarto-table-cell-role="th">n</th>
+<th data-quarto-table-cell-role="th">percentage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>female</td>
+<td>57</td>
+<td>0.081</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>hermaphrodite</td>
+<td>6</td>
+<td>0.009</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>male</td>
+<td>639</td>
+<td>0.910</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Ao visualizar graficamente, podemos ter uma melhor visão desses dados</p>
+<div id="cell-graph-gender-participation" class="cell" data-execution_count="20">
+<details class="code-fold">
+<summary>Código</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>df_gender_participations.reset_index().set_index(<span class="st">"gender"</span>)[<span class="st">"n"</span>].plot.pie(y<span class="op">=</span><span class="st">""</span>, autopct<span class="op">=</span><span class="st">'</span><span class="sc">%1.1f%%</span><span class="st">'</span>,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    startangle<span class="op">=</span><span class="dv">90</span>,      </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    shadow<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>     colors<span class="op">=</span>sns.color_palette(<span class="st">"Set2"</span>) ,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>     figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">8</span>),</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>     title<span class="op">=</span><span class="st">"Participação por gênero"</span>)</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="starwars_4_files/figure-html/graph-gender-participation-output-1.png" id="graph-gender-participation" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Ou seja as personagens femininas participaram de alguma fala em 57 vezes representando uma porcentagem de 8.1% enquanto os personagens masculinos participaram de alguma fala em 639 vezes representando uma porcentagem de 91.0%, por fim vale destacar o genero hermafrodita que aparece 6 vezes respresentando uma porcentagem de 0.9%</p>
+<p>Comparando com os dados anteriormente apresentado, esta disparidade se da pelo fato da predominância de personagens masculinos no filme, enquanto mulheres tem 1 personagem e hemafroditas tem 1 personagem</p>
+</section>
+<section id="espécie" class="level2">
+<h2 class="anchored" data-anchor-id="espécie">Espécie</h2>
+<div id="species-analysis" class="cell" data-execution_count="21">
+<details class="code-fold">
+<summary>Código</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">isinstance</span>(df_merged_clean[<span class="st">"species"</span>].iloc[<span class="dv">0</span>],<span class="bu">str</span>):</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    df_merged_clean.loc[:,<span class="st">"species"</span>] <span class="op">=</span> df_merged_clean[<span class="st">"species"</span>].<span class="bu">apply</span>(literal_eval)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>df_species <span class="op">=</span> read_csv(<span class="st">"species.csv"</span>).rename(columns<span class="op">=</span>{<span class="st">"url"</span>:<span class="st">"url_species"</span>, <span class="st">"name"</span>:<span class="st">"species_name"</span>}).drop(columns<span class="op">=</span>[<span class="st">"created"</span>,<span class="st">"edited"</span>,<span class="st">"films"</span>,<span class="st">"people"</span>,<span class="st">"homeworld"</span>])</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>df_merged_species <span class="op">=</span> pd.merge(left<span class="op">=</span>df_merged_clean.explode(column<span class="op">=</span><span class="st">"species"</span>), right<span class="op">=</span>df_species, how<span class="op">=</span><span class="st">"left"</span> , left_on<span class="op">=</span><span class="st">"species"</span>,right_on<span class="op">=</span><span class="st">"url_species"</span>)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>df_plot <span class="op">=</span> df_merged_species.groupby(<span class="st">"species_name"</span>).agg(n<span class="op">=</span>(<span class="st">"name"</span>,<span class="st">"nunique"</span>)).reset_index()</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>display(df_plot)</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">8</span>))</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>sns.barplot(data<span class="op">=</span>df_plot, x<span class="op">=</span><span class="st">"species_name"</span>, y<span class="op">=</span><span class="st">"n"</span>, hue<span class="op">=</span><span class="st">"species_name"</span>)</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Espécies"</span>)</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Quantidade"</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Quantidade de personagens por espécies"</span>)</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copiar para a área de transferência" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="species-analysis-1" class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">species_name</th>
+<th data-quarto-table-cell-role="th">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>Droid</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>Human</td>
+<td>11</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>Hutt</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>Rodian</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="starwars_4_files/figure-html/species-analysis-output-2.png" id="species-analysis-2" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
 </section>
 
 </main>

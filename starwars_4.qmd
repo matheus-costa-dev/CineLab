@@ -41,8 +41,9 @@ from nltk.tokenize import word_tokenize
 import nltk
 import string
 from wordcloud import WordCloud
-from IPython.display import display
+from IPython.display import display, Markdown
 from os.path import join
+from ast import literal_eval
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -52,6 +53,12 @@ nltk.download('stopwords')
 ```{python}
 #| label: custom-functions
 #| include: false
+
+def read_csv(filename):
+    folder = "datasets"
+    sub_folder = "starwars_4"
+    path = join(folder,sub_folder, filename)
+    return pd.read_csv(path)
 
 def sentiment_analysis(texto):
     analyse = TextBlob(texto)
@@ -68,6 +75,7 @@ def clean_word(word):
     # Remove qualquer pontuação restante (incluindo no meio da palavra)
     word = ''.join([char for char in word if char not in string.punctuation])
     return word
+
 ```
 
 
@@ -75,7 +83,7 @@ def clean_word(word):
 #| label: Importação-dados
 #| code-fold: true
 
-df = pd.read_csv(join("datasets","starwars_4","script.csv"))
+df = read_csv("script.csv")
 personagens = [personagem.capitalize() for personagem in df["character"].unique()]
 n_personagens = len(personagens)
 ```
@@ -294,6 +302,130 @@ plt.xlabel("Personagem")
 plt.ylabel("Número de falas")
 plt.xticks(rotation=45)
 plt.tight_layout()
+plt.show()
+
+```
+
+# Análise por tópicos
+
+
+```{python}
+#| label: data-merged
+#| code-fold: true
+
+df_name_versions = read_csv("name_versions.csv")
+df_merged = pd.merge(df,df_name_versions,"left","character")
+df_characters = read_csv("characters.csv")
+df_merged = pd.merge(df_merged, df_characters, "left", left_on="full_name",right_on="name")
+df_merged_clean = df_merged[~df_merged["name"].isna()]
+df_merged_dirty = df_merged[df_merged["name"].isna()]
+personagens_deleted = df_merged_dirty["character"].apply(lambda char: char.capitalize()).unique()
+personagens_kept = df_merged_clean["name"].apply(lambda char: char.capitalize()).unique()
+```
+
+
+Para fazer essa análise, será removido os persoagens que não tem detalhes sobre as suas participações ou são genéricas, portanto ao fazer a limpeza inicial foi removido `{python} len(personagens_deleted)` representando uma diminuição de `{python} round(len(personagens_deleted)/len(personagens),3)* 100`% do total presente. Sendo eles `{python} ", ".join(personagens_deleted)`.
+
+O total de personagens mantidos foram `{python} len(personagens_kept)` ou seja uma população de `{python} round(len(personagens_kept)/len(personagens),3)* 100`% sendo eles `{python} ", ".join(personagens_kept)`. 
+
+## Gênero
+
+Ao verificar os generos dos personagens, encontramos a seguinte distribuição:
+
+```{python}
+#| label: tbl-gender-n
+#| code-fold: true
+
+df_gender_n = df_merged_clean.groupby("gender").agg(n=("name","nunique")).reset_index()
+display(df_gender_n)
+```
+
+podendo ser vista da seguinte forma: 
+
+```{python}
+#| label: graph-pie-gender
+#| code-fold: true
+
+df_gender_n.reset_index().set_index("gender")["n"].plot.pie(ylabel="",
+                           autopct='%1.1f%%',
+    startangle=90,      
+    shadow=True,
+     colors=sns.color_palette("Set2") ,
+     figsize=(12,8),
+          title="Quantidade de personagens por genero")
+
+```
+
+
+```{python}
+#| label: tbl-genders
+#| code-fold: true
+
+for gender in df_merged_clean["gender"].dropna().unique():
+    tmp = df_merged_clean[df_merged_clean["gender"]==gender].drop_duplicates("name").reset_index().loc[:, ["name","gender"]]
+    display(Markdown(f"### {gender}"))
+    display(tmp)
+```
+
+
+Feito essa analise inicial, podemos verificar a participação de cada gênero no filme
+
+## Participação de gênero
+
+```{python}
+#| label: gender-analysis
+#| code-fold: true
+
+
+df_gender_participations = df_merged_clean.groupby("gender").agg(n=("gender","count")).assign(percentage = lambda col: round(col["n"]/col["n"].sum(), 3))
+total_participation = df_gender_participations["n"].sum()
+gender_participation_dict = df_gender_participations.to_dict()
+
+display(df_gender_participations.reset_index())
+```
+
+
+Ao visualizar graficamente, podemos ter uma melhor visão desses dados
+
+```{python}
+#| label: graph-gender-participation
+#| code-fold: true
+
+df_gender_participations.reset_index().set_index("gender")["n"].plot.pie(y="", autopct='%1.1f%%',
+    startangle=90,      
+    shadow=True,
+     colors=sns.color_palette("Set2") ,
+     figsize=(12,8),
+     title="Participação por gênero")
+
+```
+
+Ou seja as personagens femininas participaram de alguma fala em `{python} gender_participation_dict["n"]["female"]` vezes representando uma porcentagem de  `{python} gender_participation_dict["percentage"]["female"] * 100`% enquanto os personagens masculinos participaram de alguma fala em `{python} gender_participation_dict["n"]["male"]` vezes representando uma porcentagem de `{python} gender_participation_dict["percentage"]["male"] * 100`%, por fim vale destacar o genero hermafrodita que aparece `{python} gender_participation_dict["n"]["hermaphrodite"]` vezes respresentando uma porcentagem de `{python} round(gender_participation_dict["percentage"]["hermaphrodite"] * 100,3)`%
+
+Comparando com os dados anteriormente apresentado, esta disparidade se da pelo fato da predominância de personagens masculinos no filme, enquanto mulheres tem `{python} df_gender_n["n"].iloc[0].item()` personagem e hemafroditas tem `{python} df_gender_n["n"].iloc[1].item()` personagem
+
+## Espécie
+
+```{python}
+#| label: species-analysis
+#| code-fold: true
+
+if isinstance(df_merged_clean["species"].iloc[0],str):
+    df_merged_clean.loc[:,"species"] = df_merged_clean["species"].apply(literal_eval)
+
+df_species = read_csv("species.csv").rename(columns={"url":"url_species", "name":"species_name"}).drop(columns=["created","edited","films","people","homeworld"])
+
+df_merged_species = pd.merge(left=df_merged_clean.explode(column="species"), right=df_species, how="left" , left_on="species",right_on="url_species")
+
+df_plot = df_merged_species.groupby("species_name").agg(n=("name","nunique")).reset_index()
+display(df_plot)
+
+
+plt.figure(figsize=(12,8))
+sns.barplot(data=df_plot, x="species_name", y="n", hue="species_name")
+plt.xlabel("Espécies")
+plt.ylabel("Quantidade")
+plt.title("Quantidade de personagens por espécies")
 plt.show()
 
 ```
